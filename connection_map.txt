@@ -1,0 +1,5 @@
+client -> server:  SEND GET_RSA
+server -> client: SENDS RSA
+client -> server: SEND client ID + AES KEY, encrypted with RSA
+server -> client: SENDS BACK CERT, encrypted with AES key
+client -> server: validate cert, SENDS ACK, encrypted with AES
