@@ -9,12 +9,34 @@
 #include "openssl/aes.h"
 #include "openssl/rsa.h"
 #include <openssl/pem.h>
-
+#include <openssl/err.h>
 #define PORT_NUMBER 8080
 #define VERSION 1
 
+RSA *server_rsa_key;
 
+RSA*load_pem_rsa_key_pub(const char pem_key)
+{
+    BIO *bio = BIO_new_mem_buf((void *)pem_key, -1);
+    RSA* rsa = NULL;
 
+    if (!bio) {
+            ERR_print_errors_fp(stderr);
+            return NULL;
+        }
+
+    // Read the private key from the BIO
+    rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
+    if (!rsa) {
+        ERR_print_errors_fp(stderr);
+        BIO_free(bio);
+        return NULL;
+    }
+
+    BIO_free(bio);
+    return rsa;
+    
+}
 
 
 int send_data(int socket_number,const char *message)
@@ -55,6 +77,7 @@ int init_connection(int socket_number)
     char *rsa_key = malloc(pkt.payload_len);
     strncpy(rsa_key,pkt.payload,pkt.payload_len);
     printf("client:\n%s\n",rsa_key);
+    server_rsa_key = load_pem_rsa_key_pub(rsa_key);
 
         
 }
