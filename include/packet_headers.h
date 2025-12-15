@@ -6,7 +6,12 @@ enum PacketTypes
 {
     GET_RSA = 1,
     SEND_RSA = 2,
+    SEND_AES = 3,
     
+};
+enum AuthTypes
+{
+    GENERAL_AUTH = 1,
 };
 typedef struct {
     uint16_t version;

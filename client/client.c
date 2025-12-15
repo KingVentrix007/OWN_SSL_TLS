@@ -10,33 +10,14 @@
 #include "openssl/rsa.h"
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#include "include/rsakey.h"
+#include "include/security.h"
 #define PORT_NUMBER 8080
 #define VERSION 1
-
+#define PADDING RSA_PKCS1_OAEP_PADDING
 RSA *server_rsa_key;
 
-RSA*load_pem_rsa_key_pub(const char pem_key)
-{
-    BIO *bio = BIO_new_mem_buf((void *)pem_key, -1);
-    RSA* rsa = NULL;
 
-    if (!bio) {
-            ERR_print_errors_fp(stderr);
-            return NULL;
-        }
-
-    // Read the private key from the BIO
-    rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
-    if (!rsa) {
-        ERR_print_errors_fp(stderr);
-        BIO_free(bio);
-        return NULL;
-    }
-
-    BIO_free(bio);
-    return rsa;
-    
-}
 
 
 int send_data(int socket_number,const char *message)
@@ -50,7 +31,8 @@ int close_connect(int socket_number)
     close(socket_number);
 }
 
-int init_connection(int socket_number)
+
+int get_rsa_key(int socket_number)
 {
     //Fetch RSA KEY
     size_t packet_size;
@@ -69,16 +51,35 @@ int init_connection(int socket_number)
         printf("Issue with buffer\n");
     }
     int decode_err = decode_packet(buffer,buffer_size,&pkt);
-    printf("Packet_type = %d\n",pkt.type);
+    printf("Packet_type(client) = %d\n",pkt.type);
     if(pkt.type != SEND_RSA)
     {
         return -1;
     }
     char *rsa_key = malloc(pkt.payload_len);
     strncpy(rsa_key,pkt.payload,pkt.payload_len);
-    printf("client:\n%s\n",rsa_key);
+    // printf("client:\n%s\n",rsa_key);
     server_rsa_key = load_pem_rsa_key_pub(rsa_key);
+}
+int send_aes_key(int socket_number)
+{
+    int err;
+    size_t packet_size;
 
+    unsigned char *aes_key = generate_key(32);
+    int encrypted_length = RSA_size(server_rsa_key);
+    unsigned char *encrypted_aes_key = (unsigned char*)malloc(encrypted_length);
+    encrypted_length = RSA_public_encrypt(32,aes_key,encrypted_aes_key,server_rsa_key,PADDING);
+    uint8_t *send_aes_packet = build_packet(0,SEND_AES,0,0,NULL,encrypted_length,encrypted_aes_key,&packet_size,&err);
+    printf("sending\n");
+    send(socket_number, send_aes_packet, packet_size, 0); // Send aes_key
+}
+int init_connection(int socket_number)
+{
+    get_rsa_key(socket_number);
+    printf("SEND aes\n");
+    send_aes_key(socket_number);
+    
         
 }
 

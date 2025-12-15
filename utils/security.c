@@ -135,35 +135,3 @@ unsigned char *generate_key(size_t size)
 
     return rng_key;  
 }
-
-int main(int argc, char const *argv[])
-{
-    unsigned char *key = generate_key(32);
-    char *text = "Hello World";
-
-    unsigned char *cipher_text;
-    uint32_t cipher_text_len;
-    printf("Starting\n");
-    cipher_text = aes_enc(text,strlen(text),key,&cipher_text_len);
-    if(cipher_text == NULL)
-    {
-        printf("NULL ERROR\n");
-    }
-    printf("Complete %d");
-    for (size_t i = 0; i < cipher_text_len; i++)
-    {
-        printf("%02X",cipher_text[i]);
-    }
-    printf("\n");
-    
-    unsigned char *output_text = malloc(cipher_text_len);
-    
-    printf("Starting dec\n");
-    aes_dec(cipher_text,cipher_text_len,output_text,key);
-    printf("Complete enc\n");
-    printf("Output: %s\n",output_text);
-    
-
-
-    return 0;
-}
