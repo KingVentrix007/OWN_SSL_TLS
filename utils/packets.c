@@ -20,7 +20,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <inttypes.h> // For PRIu32
-uint8_t *build_packet(uint16_t version,uint8_t type,uint8_t auth_type,uint32_t auth_len,uint32_t auth[],uint32_t payload_len,uint8_t payload[],size_t *out_len, int *err) 
+uint8_t *build_packet(uint16_t version,uint8_t type,uint8_t auth_type,uint32_t auth_len,uint8_t auth[],uint32_t payload_len,uint8_t payload[],size_t *out_len, int *err) 
 {
     size_t bsize =
         sizeof(uint16_t) +   // version

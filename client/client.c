@@ -12,10 +12,12 @@
 #include <openssl/err.h>
 #include "include/rsakey.h"
 #include "include/security.h"
+#include "include/serverheaders.h"
 #define PORT_NUMBER 8080
 #define VERSION 1
 #define PADDING RSA_PKCS1_OAEP_PADDING
 RSA *server_rsa_key;
+client_t client_data;
 
 
 
@@ -73,12 +75,65 @@ int send_aes_key(int socket_number)
     uint8_t *send_aes_packet = build_packet(0,SEND_AES,0,0,NULL,encrypted_length,encrypted_aes_key,&packet_size,&err);
     printf("sending\n");
     send(socket_number, send_aes_packet, packet_size, 0); // Send aes_key
+
+
+    size_t buffer_size;
+    uint8_t *buffer = get_pkt(socket_number,&buffer_size);
+    packet_t pkt;
+    if(buffer == NULL)
+    {
+        printf("Issue with buffer\n");
+    }
+    int decode_err = decode_packet(buffer,buffer_size,&pkt);
+    printf("Packet_type(client) = %d\n",pkt.type);
+    if(pkt.type == ACK_AES)
+    {
+        unsigned char *output_text = malloc(pkt.payload_len);
+        
+        // printf("Starting dec\n");
+        aes_dec(pkt.payload,pkt.payload_len,output_text,aes_key);
+        strcpy(client_data.uuid_str,output_text);
+        client_data.aes_key = malloc(33);
+        memcpy(client_data.aes_key,aes_key,32);
+
+        printf("UUID: %s\n",client_data.uuid_str);
+
+    }
 }
+
+int request_certificate(int socket_number)
+{
+    int err;
+    size_t packet_size;
+    
+    unsigned char *enc_uuid;
+    uint32_t enc_uuid_len;
+    printf("Starting\n");
+    enc_uuid = aes_enc(client_data.uuid_str,strlen(client_data.uuid_str),client_data.aes_key,&enc_uuid_len);
+
+    uint8_t *get_cert_packet = build_packet(0,REQUEST_CERT,PRE_CERT,enc_uuid_len,(uint8_t *)enc_uuid,0,NULL,&packet_size,&err);
+    send(socket_number,get_cert_packet,packet_size,0);
+
+    size_t buffer_size;
+    uint8_t *buffer = get_pkt(socket_number,&buffer_size);
+    packet_t pkt;
+    if(buffer == NULL)
+    {
+        printf("Issue with buffer\n");
+    }
+    int decode_err = decode_packet(buffer,buffer_size,&pkt);
+    
+    
+
+}
+
 int init_connection(int socket_number)
 {
     get_rsa_key(socket_number);
     printf("SEND aes\n");
     send_aes_key(socket_number);
+    printf("Request Cert\n");
+    request_certificate(socket_number);
     
         
 }

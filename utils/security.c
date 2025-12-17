@@ -34,12 +34,12 @@ unsigned char * aes_enc(const unsigned char *plaintext,int plaintext_length,unsi
     
 
     // Position output pointer after IV
-    printf("Copy IV\n");
+    // printf("Copy IV\n");
     memcpy(enc_data, iv, sizeof(iv));
-    printf("Copy complete\n");
+    // printf("Copy complete\n");
     unsigned char *out_ptr = enc_data + sizeof(iv);
 
-    printf("Start enc\n");
+    // printf("Start enc\n");
     // Encrypt plaintext
     EVP_EncryptUpdate(ctx, out_ptr, &len, plaintext, plaintext_length);
     ciphertext_len += len;
@@ -67,12 +67,12 @@ int aes_dec(const unsigned char *ciphertext,
     unsigned char tag[16];
     // plaintext = malloc(ciphertext_len);
     // Extract IV and TAG
-    printf("CPY data: %ld\n",ciphertext_len);
+    // printf("CPY data: %ld\n",ciphertext_len);
     memcpy(iv, ciphertext, 12);
 
-    printf("Cpy TAG\n");
+    // printf("Cpy TAG\n");
     memcpy(tag, ciphertext + (ciphertext_len - 16), 16);
-    printf("CPY done\n");
+    // printf("CPY done\n");
     // Extract actual ciphertext
     uint32_t enc_len = ciphertext_len - 12 - 16;
     unsigned char *enc_data = malloc(enc_len);
@@ -85,18 +85,18 @@ int aes_dec(const unsigned char *ciphertext,
     int len = 0;
     int plaintext_len = 0;
 
-    printf("Decypting\n");
+    // printf("Decypting\n");
     // Init decrypt
     EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL);
 
-    printf("Set IV\n");
+    // printf("Set IV\n");
     // Set IV length
     EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, sizeof(iv), NULL);
 
     // Provide key + IV
     EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv);
 
-    printf("Main dec\n");
+    // printf("Main dec\n");
 
     // Decrypt ciphertext
     EVP_DecryptUpdate(ctx, plaintext, &len, enc_data, enc_len);
@@ -110,7 +110,7 @@ int aes_dec(const unsigned char *ciphertext,
 
     EVP_CIPHER_CTX_free(ctx);
     free(enc_data);
-    printf("Done\n");
+    // printf("Done\n");
     if (ret > 0) {
         // Success
         plaintext_len += len;

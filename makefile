@@ -56,3 +56,7 @@ run: all
 test: $(TEST_MAIN)
 	$(TEST_MAIN);
 
+run-s: all
+	$(SERVER_EXE);
+run-c: all
+	$(CLIENT_EXE);

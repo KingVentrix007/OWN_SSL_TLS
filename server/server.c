@@ -12,7 +12,11 @@
 #include "include/rsakey.h"
 #include <uuid/uuid.h>
 #include "openssl/rsa.h"
+#include "include/serverheaders.h"
+#include "include/security.h"
 RSA *global_rsa_keypair;
+client_t *client_list;
+size_t num_clients = 0;
 
 void setup_rsa()
 {
@@ -58,7 +62,39 @@ int handle_get_aes(int socket_number,packet_t pkt)
     unsigned char *decrypted_data = malloc((size_t)encrypted_length);
     // int decrypted_length = RSA_public_encrypt(32,aes_key,encrypted_aes_key,server_rsa_key,PADDING);
     int decrypted_length = RSA_private_decrypt(encrypted_length,pkt.payload,decrypted_data,global_rsa_keypair,RSA_PKCS1_OAEP_PADDING);
+    if(num_clients <= 0)
+    {
+        client_list = malloc(sizeof(client_t)*100);
+        strcpy(client_list[0].uuid_str,uuid_str);
+        client_list[0].aes_key = malloc(decrypted_length);
+        memcpy(client_list[0].aes_key,decrypted_data,decrypted_length);
+        num_clients+=1;
 
+    }
+    else
+    {
+        if(num_clients % 100 == 0)
+        {
+            //Handle later
+        }
+        strcpy(client_list[num_clients].uuid_str,uuid_str);
+        client_list[0].aes_key = malloc(decrypted_length);
+        memcpy(client_list[num_clients].aes_key,decrypted_data,decrypted_length);
+        num_clients+=1;
+    }
+    unsigned char *encrypted_uuid;
+    uint32_t encrypted_uuid_len;
+    // printf("Starting\n");
+     size_t pkt_size;
+     int err;
+    encrypted_uuid = aes_enc(uuid_str,strlen(uuid_str),decrypted_data,&encrypted_uuid_len);
+    uint8_t *ack_aes_packet = build_packet(0,ACK_AES,0,0,NULL,encrypted_uuid_len,encrypted_uuid,&pkt_size,&err);
+    send(socket_number,ack_aes_packet,pkt_size,0);
+}
+
+int handle_request_cert(int socket_numer,packet_t pkt)
+{
+    
 }
 
 int handle_connection(int socket)
@@ -87,6 +123,11 @@ int handle_connection(int socket)
                 printf("HERE\n");
                 handle_get_aes(socket,pkt);
             }
+            else if (pkt.type == REQUEST_CERT)
+            {
+                /* code */
+            }
+            
         }
         
     }
